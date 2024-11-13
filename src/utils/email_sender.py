@@ -2,6 +2,7 @@ import win32com.client as win32
 import pythoncom
 import logging
 import os
+import re
 
 class EmailSender:
     def __init__(self):
@@ -85,9 +86,10 @@ class EmailSender:
         for index, row in df.iterrows():
             try:
                 email_body = edited_templates.get(str(index), template)
-                if "Preview" in email_body:
-                    email_body = email_body.split("\n\n", 1)[1]
-                
+
+                # Extract the email body based on the "Preview" section
+                email_body = self.extract_email_body(email_body)
+
                 email_body = email_body.replace("X", str(row["Last Name"]))
                 email_body = email_body.replace("Y", str(row["Fund Name"]))
                 email_body = email_body.replace("Z", str(row["Port-Co"]))
@@ -102,3 +104,11 @@ class EmailSender:
                 logging.error(f"Failed to send email to {row['Email']}: {str(e)}")
                 
         return successful, total_emails, failed_emails
+
+    def extract_email_body(self, template):
+        """Extracts the email body from a template with a "Preview" section"""
+        preview_match = re.search(r"^\*\*Preview\*\*\n(.*)", template, re.MULTILINE)
+        if preview_match:
+            return preview_match.group(1).strip()
+        else:
+            return template
