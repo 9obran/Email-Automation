@@ -111,4 +111,6 @@ class EmailSender:
         if preview_match:
             return preview_match.group(1).strip()
         else:
+            # Handle cases where the "Preview" section is not found or has a different format
+            logging.warning("Preview section not found in template. Using the entire template.")
             return template
