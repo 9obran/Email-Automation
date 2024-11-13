@@ -46,22 +46,22 @@ class EmailSender:
 
     def format_email_body(self, body, font_family="Calibri", font_size="11"):
         """Format the email body with HTML"""
-        style = f"body {{ font-family: {font_family}; font-size: {font_size}pt; }}"
-        html_body = f"""
-        <html>
-        <head>
-        <style>
-            {style}
-        </style>
-        </head>
-        <body>
-        {body.replace('\n', '<br>')}
-        <br><br>
-        {self.get_signature()}
-        </body>
-        </html>
-        """
-        return html_body
+        style = 'body { ' + f'font-family: {font_family}; font-size: {font_size}pt;' + ' }'
+        html_parts = [
+            '<html>',
+            '<head>',
+            '<style>',
+            style,
+            '</style>',
+            '</head>',
+            '<body>',
+            body.replace('\n', '<br>'),
+            '<br><br>',
+            self.get_signature(),
+            '</body>',
+            '</html>'
+        ]
+        return '\n'.join(html_parts)
 
     def send_email(self, recipient, subject, body, font_family="Calibri", font_size="11"):
         """Send a single email"""
