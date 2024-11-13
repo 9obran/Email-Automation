@@ -1,48 +1,22 @@
-import win32com.client as win32
-import pythoncom
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import logging
 import os
 
 class EmailSender:
     def __init__(self):
-        self.outlook = None
-        try:
-            pythoncom.CoInitialize()
-            self.outlook = win32.Dispatch("Outlook.Application")
-        except Exception as e:
-            logging.error(f"Failed to initialize Outlook: {str(e)}")
-            raise
-
-    def __del__(self):
-        try:
-            pythoncom.CoUninitialize()
-        except:
-            pass
+        self.smtp_server = os.getenv('SMTP_SERVER', 'smtp.office365.com')
+        self.smtp_port = int(os.getenv('SMTP_PORT', '587'))
+        self.email_address = os.getenv('EMAIL_ADDRESS')
+        self.email_password = os.getenv('EMAIL_PASSWORD')
+        
+        if not all([self.email_address, self.email_password]):
+            raise ValueError("Email credentials not properly configured")
 
     def get_signature(self):
-        """Get the default signature from Outlook"""
-        try:
-            # Get the default signature from the current user's profile
-            namespace = self.outlook.GetNamespace("MAPI")
-            account = namespace.Accounts[0]  # Get the first email account
-            signature = ""
-            
-            # Try to get signature from AppData
-            appdata = os.getenv('APPDATA')
-            signature_path = os.path.join(appdata, 'Microsoft', 'Signatures')
-            
-            if os.path.exists(signature_path):
-                # Look for .htm or .rtf files
-                signature_files = [f for f in os.listdir(signature_path) 
-                                 if f.endswith(('.htm', '.rtf')) and not f.startswith('~')]
-                if signature_files:
-                    with open(os.path.join(signature_path, signature_files[0]), 'r', encoding='utf-8') as f:
-                        signature = f.read()
-            
-            return signature
-        except Exception as e:
-            logging.error(f"Failed to get signature: {str(e)}")
-            return ""
+        """Get signature from environment variable or return empty string"""
+        return os.getenv('EMAIL_SIGNATURE', '')
 
     def format_email_body(self, body, font_family="Calibri", font_size="11"):
         """Format the email body with HTML"""
@@ -66,11 +40,19 @@ class EmailSender:
     def send_email(self, recipient, subject, body, font_family="Calibri", font_size="11"):
         """Send a single email"""
         try:
-            email = self.outlook.CreateItem(0)
-            email.Subject = subject
-            email.HTMLBody = self.format_email_body(body, font_family, font_size)
-            email.Recipients.Add(recipient)
-            email.Send()
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = self.email_address
+            msg['To'] = recipient
+
+            html_content = self.format_email_body(body, font_family, font_size)
+            msg.attach(MIMEText(html_content, 'html'))
+
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.email_address, self.email_password)
+                server.send_message(msg)
+
             logging.info(f"Email sent successfully to {recipient}")
             return True
         except Exception as e:
