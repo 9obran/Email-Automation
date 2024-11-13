@@ -46,11 +46,12 @@ class EmailSender:
 
     def format_email_body(self, body, font_family="Calibri", font_size="11"):
         """Format the email body with HTML"""
+        style = f"body {{ font-family: {font_family}; font-size: {font_size}pt; }}"
         html_body = f"""
         <html>
         <head>
         <style>
-            body {{ font-family: {font_family}; font-size: {font_size}pt; }}
+            {style}
         </style>
         </head>
         <body>
