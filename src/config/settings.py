@@ -12,12 +12,14 @@ LOGGING_CONFIG = {
     'format': '%(asctime)s - %(levelname)s - %(message)s'
 }
 
-# Required Excel columns
-REQUIRED_COLUMNS = ["last name", "fund name", "port-co", "email"]
-STANDARD_COLUMNS = ["Last Name", "Fund Name", "Port-Co", "Email"]
+# Dynamic columns and placeholders (will be set at runtime)
+REQUIRED_COLUMNS = []
+STANDARD_COLUMNS = []
+REQUIRED_PLACEHOLDERS = []
 
-# Template placeholders
-REQUIRED_PLACEHOLDERS = ["X", "Y", "Z"]
+# Storage keys for settings
+PLACEHOLDER_SETTINGS_KEY = "placeholder_settings"
+COLUMN_MAPPING_KEY = "column_mapping"
 
 # Email configuration
 DEFAULT_EMAIL_SERVICE = "outlook"
