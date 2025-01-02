@@ -59,11 +59,18 @@ class EmailSender:
             logging.error(f"Failed to send email to {recipient}: {str(e)}")
             return False
 
-    def send_batch_emails(self, df, template, subject, edited_templates=None, font_family="Calibri", font_size="11"):
-        """Send emails to multiple recipients"""
+    def send_batch_emails(self, df, template, subject, placeholder_settings, edited_templates=None, 
+                         font_family="Calibri", font_size="11"):
+        """Send emails with dynamic placeholder replacement"""
         total_emails = len(df)
         successful = 0
         failed_emails = []
+        
+        # Get email column (assuming it's named 'email' or similar)
+        email_column = next((col for col in df.columns if 'email' in col.lower()), None)
+        if not email_column:
+            logging.error("No email column found in DataFrame")
+            return 0, total_emails, []
         
         for index, row in df.iterrows():
             try:
@@ -71,17 +78,18 @@ class EmailSender:
                 if "Preview" in email_body:
                     email_body = email_body.split("\n\n", 1)[1]
                 
-                email_body = email_body.replace("X", str(row["Last Name"]))
-                email_body = email_body.replace("Y", str(row["Fund Name"]))
-                email_body = email_body.replace("Z", str(row["Port-Co"]))
+                # Replace all placeholders dynamically
+                for column, placeholder in placeholder_settings.items():
+                    if placeholder and column in row:
+                        email_body = email_body.replace(placeholder, str(row[column]))
                 
-                if self.send_email(row['Email'], subject, email_body, font_family, font_size):
+                if self.send_email(row[email_column], subject, email_body, font_family, font_size):
                     successful += 1
                 else:
-                    failed_emails.append(row['Email'])
+                    failed_emails.append(row[email_column])
                     
             except Exception as e:
-                failed_emails.append(row['Email'])
-                logging.error(f"Failed to send email to {row['Email']}: {str(e)}")
+                failed_emails.append(row[email_column])
+                logging.error(f"Failed to send email to {row[email_column]}: {str(e)}")
                 
         return successful, total_emails, failed_emails
